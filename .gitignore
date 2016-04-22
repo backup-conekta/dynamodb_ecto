@@ -1,0 +1,7 @@
+/_build
+/deps
+erl_crash.dump
+*.ez
+examples/simple/mix.lock
+/db
+/doc

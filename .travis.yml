@@ -1,0 +1,43 @@
+language: elixir
+
+cache:
+  - apt
+  - directories:
+      - ~/.dynamodb
+
+elixir:
+  - 1.1
+
+otp_release:
+  - 18.1
+
+install:
+  - m use $MONGOVERSION
+  - mkdir db
+  - export PATH=`m path`:$PATH
+  - mix local.hex --force
+
+before_script:
+  - dynamod --fork --logpath dynamo.log --dbpath db
+  - mix deps.get
+  - (cd examples/simple; mix deps.get)
+
+after_script:
+  - mix deps.get --only docs
+  - MIX_ENV=docs mix inch.report
+  - MIX_ENV=test mix coveralls.travis
+
+env:
+  matrix:
+    - MONGOVERSION=2.4.14
+    - MONGOVERSION=2.6.11
+    - MONGOVERSION=3.0.7
+    - MONGOVERSION=3.2.3
+
+script:
+  - mix test
+  - (cd examples/simple; mix test)
+
+notifications:
+  recipients:
+    - michal@muskala.eu

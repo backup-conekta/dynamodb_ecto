@@ -361,7 +361,6 @@ defmodule Dynamo.Ecto do
   alias Dynamo.Ecto.NormalizedQuery.ReadQuery
   alias Dynamo.Ecto.NormalizedQuery.WriteQuery
   alias Dynamo.Ecto.NormalizedQuery.CountQuery
-  alias Dynamo.Ecto.NormalizedQuery.AggregateQuery
   alias Dynamo.Ecto.ObjectID
   alias Dynamo.Ecto.Connection
   alias Dynamo.Ecto.Conversions
@@ -474,7 +473,7 @@ defmodule Dynamo.Ecto do
     {:nocache, {function, query}}
   end
 
-  @read_queries [ReadQuery, CountQuery, AggregateQuery]
+  @read_queries [ReadQuery, CountQuery]
 
   @doc false
   def execute(repo, _meta, {function, query}, params, preprocess, opts) do

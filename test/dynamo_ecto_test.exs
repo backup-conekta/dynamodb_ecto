@@ -35,42 +35,6 @@ defmodule Dynamo.EctoTest do
     assert 1 == TestRepo.one(query)
   end
 
-  test "min" do
-    TestRepo.insert!(%Post{visits: 5})
-    TestRepo.insert!(%Post{visits: 10})
-    TestRepo.insert!(%Post{visits: 15})
-
-    query = from p in Post, where: p.visits >= 10, select: min(p.visits)
-    assert 10 == TestRepo.one(query)
-  end
-
-  test "max" do
-    TestRepo.insert!(%Post{visits: 15})
-    TestRepo.insert!(%Post{visits: 10})
-    TestRepo.insert!(%Post{visits: 5})
-
-    query = from p in Post, offset: 1, select: max(p.visits)
-    assert 10 == TestRepo.one(query)
-  end
-
-  test "sum" do
-    TestRepo.insert!(%Post{visits: 15})
-    TestRepo.insert!(%Post{visits: 10})
-    TestRepo.insert!(%Post{visits: 5})
-
-    query = from p in Post, limit: 2, select: sum(p.visits)
-    assert 25 == TestRepo.one(query)
-  end
-
-  test "avg" do
-    TestRepo.insert!(%Post{visits: 15})
-    TestRepo.insert!(%Post{visits: 10})
-    TestRepo.insert!(%Post{visits: 5})
-
-    query = from p in Post, select: avg(p.visits)
-    assert 10 == TestRepo.one(query)
-  end
-
   test "partial update in map" do
     post = TestRepo.insert!(%Post{meta: %{author: %{name: "michal"}, other: "value"}})
     TestRepo.update_all(Post, set: [meta: change_map("author.name", "michal")])

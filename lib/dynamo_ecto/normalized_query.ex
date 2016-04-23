@@ -26,12 +26,6 @@ defmodule Dynamo.Ecto.NormalizedQuery do
     defstruct coll: nil, pk: nil, fields: [], query: %{}, database: nil, opts: []
   end
 
-  defmodule AggregateQuery do
-    @moduledoc false
-
-    defstruct coll: nil, pk: nil, fields: [], pipeline: [], database: nil, opts: []
-  end
-
   alias Dynamo.Ecto.Conversions
   alias Ecto.Query.Tagged
   alias Ecto.Query
@@ -54,8 +48,6 @@ defmodule Dynamo.Ecto.NormalizedQuery do
         count(original, query, fields, params, from)
       {:find, projection, fields} ->
         find_all(original, query, projection, fields, params, from)
-      {:aggregate, pipeline, fields} ->
-        aggregate(original, query, pipeline, fields, params, from)
     end
   end
 
@@ -68,23 +60,6 @@ defmodule Dynamo.Ecto.NormalizedQuery do
   defp count(original, query, fields, params, {coll, _, pk} = from) do
     %CountQuery{coll: coll, query: query, opts: limit_skip(original, params, from),
                 pk: pk, fields: fields, database: original.prefix}
-  end
-
-  defp aggregate(original, query, pipeline, fields, params, {coll, _, pk} = from) do
-    pipeline =
-      limit_skip(original, params, from)
-      |> Enum.map(fn
-        {:limit, value} -> ["$limit": value]
-        {:skip,  value} -> ["$skip":  value]
-      end)
-      |> Kernel.++(pipeline)
-
-    if query != %{} do
-      pipeline = [["$match": query] | pipeline]
-    end
-
-    %AggregateQuery{coll: coll, pipeline: pipeline, pk: pk, fields: fields,
-                    database: original.prefix}
   end
 
   def update_all(%Query{} = original, params) do
@@ -137,9 +112,6 @@ defmodule Dynamo.Ecto.NormalizedQuery do
     {coll, model, primary_key(model)}
   end
 
-  @aggregate_ops [:min, :max, :sum, :avg]
-  @special_ops [:count | @aggregate_ops]
-
   defp projection(%Query{select: nil}, _params, _from),
     do: {:find, %{}, []}
   defp projection(%Query{select: %Query.SelectExpr{fields: fields}} = query, params, from),
@@ -161,7 +133,7 @@ defmodule Dynamo.Ecto.NormalizedQuery do
         {:find, _, facc} ->
           facc
         _other ->
-          error(query, "select clause supports only one of the special functions: `count`, `min`, `max`")
+          error(query, "select clause supports only some special functions like `count`")
       end
     {:find, %{}, facc}
   end
@@ -188,21 +160,7 @@ defmodule Dynamo.Ecto.NormalizedQuery do
   defp projection([{:count, _, [_]} = field], _params, _from, _query, pacc, _facc) when pacc == %{} do
     {:count, [{:field, :value, field}]}
   end
-  defp projection([{:count, _, [name, :distinct]} = field], _params, from, query, _pacc, _facc) do
-    {_, _, pk} = from
-    name  = field(name, pk, query, "select clause")
-    field = {:field, :value, field}
-    {:aggregate, [["$group": [_id: "$#{name}"]], ["$group": [_id: nil, value: ["$sum": 1]]]], [field]}
-  end
-  defp projection([{op, _, [name]} = field], _params, from, query, pacc, _facc) when pacc == %{} and op in @aggregate_ops do
-    {_, _, pk} = from
-    name  = field(name, pk, query, "select clause")
-    field = {:field, :value, field}
-    {:aggregate, [["$group": [_id: nil, value: [{"$#{op}", "$#{name}"}]]]], [field]}
-  end
-  defp projection([{op, _, _} | _rest], _params, _from, query, _pacc, _facc) when op in @special_ops do
-    error(query, "select clause supports only one of the special functions: `count`, `min`, `max`")
-  end
+
   defp projection([{op, _, _} | _rest], _params, _from, query, _pacc, _facc) when is_op(op) do
     error(query, "select clause")
   end

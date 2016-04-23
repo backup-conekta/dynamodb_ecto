@@ -5,7 +5,6 @@ defmodule Dynamo.Ecto.Connection do
   alias Dynamo.Ecto.NormalizedQuery.WriteQuery
   alias Dynamo.Ecto.NormalizedQuery.CommandQuery
   alias Dynamo.Ecto.NormalizedQuery.CountQuery
-  alias Dynamo.Ecto.NormalizedQuery.AggregateQuery
 
   ## Worker
 
@@ -40,14 +39,6 @@ defmodule Dynamo.Ecto.Connection do
     query = query.query
 
     [%{"value" => Dynamo.count(conn, coll, query, opts)}]
-  end
-
-  def read(conn, %AggregateQuery{} = query, opts) do
-    coll     = query.coll
-    opts     = query.opts ++ opts
-    pipeline = query.pipeline
-
-    Dynamo.aggregate(conn, coll, pipeline, opts)
   end
 
   def delete_all(conn, %WriteQuery{} = query, opts) do

@@ -21,22 +21,6 @@ defmodule Dynamo.EctoTest do
     assert [] == TestRepo.all(Post)
   end
 
-  test "javascript in query" do
-    TestRepo.insert!(%Post{visits: 1})
-
-    js = javascript("this.visits == count", count: 1)
-
-    assert [%Post{}] = TestRepo.all(from p in Post, where: ^js)
-  end
-
-  test "regex in query" do
-    p1 = TestRepo.insert!(%Post{title: "some text"})
-    p2 = TestRepo.insert!(%Post{title: "other text"})
-
-    assert [p1] == TestRepo.all(from p in Post, where: fragment(title: ["$regex": "some"]))
-    assert [p2] == TestRepo.all(from p in Post, where: fragment(title: ^regex("other")))
-  end
-
   test "retrieve whole document" do
     TestRepo.insert!(%Tag{ints: [1, 2, 3]})
 

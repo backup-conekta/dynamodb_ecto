@@ -5,40 +5,6 @@ defmodule Dynamo.Ecto.Helpers do
   """
 
   @doc """
-  Allows using inline JavaScript in queries in where clauses and inserting it
-  as a value to the database.
-
-  The second argument acts as a context for the function. All values will be
-  converted to valid BSON types.
-
-  Raises ArgumentError if any of the values cannot be converted.
-
-  ## Usage in queries
-
-      from p in Post,
-        where: ^javascript("this.value === value", value: 1)
-  """
-  @spec javascript(String.t, Keyword.t) :: Dynamo.Ecto.JavaScript.t
-  def javascript(code, scope \\ []) do
-    %Dynamo.Ecto.JavaScript{code: code, scope: scope}
-  end
-
-  @doc """
-  Creates proper regex object that can be passed to the database.
-
-  ## Usage in queries
-
-      from p in Post,
-        where: fragment(title: ^regex("elixir", "i"))
-
-  For supported options please see `Dynamo.Ecto.Regex` module documentation.
-  """
-  @spec regex(String.t, String.t) :: Dynamo.Ecto.Regex.t
-  def regex(pattern, options \\ "") do
-    %Dynamo.Ecto.Regex{pattern: pattern, options: options}
-  end
-
-  @doc """
   Allows updating only a fragment of a nested document
 
   ## Usage in queries

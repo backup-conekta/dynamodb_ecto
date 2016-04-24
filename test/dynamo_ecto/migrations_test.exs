@@ -126,13 +126,6 @@ defmodule Dynamo.Ecto.MigrationsTest do
     assert :ok == down(TestRepo, 19850423000001, NoErrorTableMigration, log: false)
   end
 
-  test "rename column" do
-    TestRepo.insert! %RenameModel{to_be_renamed: 1}
-    assert :ok == up(TestRepo, 20150718120000, RenameColumnMigration, log: false)
-    assert {nil, 1} == TestRepo.one from p in RenameModel, select: {p.to_be_renamed, p.was_renamed}
-    :ok = down(TestRepo, 20150718120000, RenameColumnMigration, log: false)
-  end
-
   test "references raise" do
     warning =
       ExUnit.CaptureIO.capture_io fn ->

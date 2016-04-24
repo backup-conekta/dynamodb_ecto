@@ -333,22 +333,10 @@ defmodule Dynamo.Ecto do
   ### Connection options
 
     * `:hostname` - Server hostname (default: `localhost`)
-    * `:port` - Server port (default: `27017`)
-    * `:username` - Username
-    * `:password` - User password
+    * `:port` - Server port (default: `8000`)
     * `:connect_timeout` - The timeout for establishing new connections (default: 5000)
     * `:w` - DynamoDB's write convern (default: 1). If set to 0, some of the
       Ecto's functions may not work properely
-    * `:j`, `:fsync`, `:wtimeout` - Other DynamoDB's write concern options. Please
-      consult DynamoDB's documentation
-
-  ### Pool options
-
-  `Dynamo.Ecto` does not use Ecto pools, instead pools provided by the DynamoDB
-  driver are used. The default poolboy adapter accepts following options:
-
-    * `:pool_size` - The number of connections to keep in the pool (default: 10)
-    * `:max_overflow` - The maximum overflow of connections (default: 0)
 
   For other adapters, please see their documentation.
   """
@@ -357,33 +345,13 @@ defmodule Dynamo.Ecto do
   @behaviour Ecto.Adapter.Storage
   @behaviour Ecto.Adapter.Migration
 
-  alias Dynamo.Ecto.NormalizedQuery
-  alias Dynamo.Ecto.NormalizedQuery.ReadQuery
-  alias Dynamo.Ecto.NormalizedQuery.WriteQuery
-  alias Dynamo.Ecto.NormalizedQuery.CountQuery
-  alias Dynamo.Ecto.ObjectID
-  alias Dynamo.Ecto.Connection
-  alias Dynamo.Ecto.Conversions
-
   ## Adapter
 
   @doc false
   defmacro __before_compile__(env) do
     module = env.module
     config = Module.get_attribute(module, :config)
-    adapter = Keyword.get(config, :pool, Dynamo.Pool.Poolboy)
 
-    quote do
-      defmodule Pool do
-        use Dynamo.Pool, name: __MODULE__, adapter: unquote(adapter)
-
-        def log(return, queue_time, query_time, fun, args) do
-          Dynamo.Ecto.log(unquote(module), return, queue_time, query_time, fun, args)
-        end
-      end
-
-      def __dynamo_pool__, do: unquote(module).Pool
-    end
   end
 
   @doc false
@@ -410,36 +378,32 @@ defmodule Dynamo.Ecto do
   def load(_type, nil),
     do: {:ok, nil}
   # wat
-  def load(:binary_id, %BSON.ObjectId{value: value}),
-    do: ObjectID.load(value)
-  def load(:binary, %BSON.Binary{binary: value}),
-    do: {:ok, value}
-  def load(Ecto.UUID, %BSON.Binary{binary: value}),
-    do: {:ok, value}
-  def load(:map, keyword),
-    do: {:ok, Enum.into(keyword, %{})}
-  def load(Ecto.Date, %BSON.DateTime{} = datetime) do
-    {date, _time} = BSON.DateTime.to_datetime(datetime)
-    Ecto.Date.load(date)
-  end
-  def load(Ecto.Time, %BSON.DateTime{} = datetime) do
-    {_date, time} = BSON.DateTime.to_datetime(datetime)
-    Ecto.Time.load(time)
-  end
-  def load(Ecto.DateTime, %BSON.DateTime{} = datetime),
-    do: datetime |> BSON.DateTime.to_datetime |> Ecto.DateTime.load
+  # def load(:binary_id, %BSON.ObjectId{value: value}),
+  #   do: ObjectID.load(value)
+  # def load(:binary, %BSON.Binary{binary: value}),
+  #   do: {:ok, value}
+  # def load(Ecto.UUID, %BSON.Binary{binary: value}),
+  #   do: {:ok, value}
+  # def load(:map, keyword),
+  #   do: {:ok, Enum.into(keyword, %{})}
+  # def load(Ecto.Date, %BSON.DateTime{} = datetime) do
+  #   {date, _time} = BSON.DateTime.to_datetime(datetime)
+  #   Ecto.Date.load(date)
+  # end
+  # def load(Ecto.Time, %BSON.DateTime{} = datetime) do
+  #   {_date, time} = BSON.DateTime.to_datetime(datetime)
+  #   Ecto.Time.load(time)
+  # end
+  # def load(Ecto.DateTime, %BSON.DateTime{} = datetime),
+  #   do: datetime |> BSON.DateTime.to_datetime |> Ecto.DateTime.load
   def load(type, data),
     do: Ecto.Type.load(type, data, &load/2)
 
   @doc false
   def dump(_type, nil),
     do: {:ok, nil}
-  def dump(:binary_id, data),
-    do: ObjectID.dump(data)
-  def dump(:binary, value),
-    do: {:ok, %BSON.Binary{binary: value}}
-  def dump(Ecto.UUID, value),
-    do: {:ok, %BSON.Binary{binary: value, subtype: :uuid}}
+  # def dump(Ecto.UUID, value),
+  #   do: {:ok, %BSON.Binary{binary: value, subtype: :uuid}}
   def dump(Ecto.Date, datetime),
     do: from_datetime(datetime)
   def dump(Ecto.Time, datetime),
@@ -462,7 +426,7 @@ defmodule Dynamo.Ecto do
   defp from_datetime({date, {hour, min, sec, usec}}) do
     greg_secs = :calendar.datetime_to_gregorian_seconds({date, {hour, min, sec}})
     epoch_secs = greg_secs - @epoch
-    {:ok, %BSON.DateTime{utc: epoch_secs * 1000 + div(usec, 1000)}}
+    {:ok, epoch_secs * 1000 + div(usec, 1000)} # probably wrong
   end
 
   @doc false
@@ -475,19 +439,19 @@ defmodule Dynamo.Ecto do
 
   @read_queries [ReadQuery, CountQuery]
 
-  @doc false
-  def execute(repo, _meta, {function, query}, params, preprocess, opts) do
-    case apply(NormalizedQuery, function, [query, params]) do
-      %{__struct__: read} = query when read in @read_queries ->
-        {rows, count} =
-          Connection.read(repo.__dynamo_pool__, query, opts)
-          |> Enum.map_reduce(0, &{process_document(&1, query, preprocess), &2 + 1})
-        {count, rows}
-      %WriteQuery{} = write ->
-        result = apply(Connection, function, [repo.__dynamo_pool__, write, opts])
-        {result, nil}
-    end
-  end
+  # @doc false
+  # def execute(repo, _meta, {function, query}, params, preprocess, opts) do
+  #   case apply(NormalizedQuery, function, [query, params]) do
+  #     %{__struct__: read} = query when read in @read_queries ->
+  #       {rows, count} =
+  #         Connection.read(repo.__dynamo_pool__, query, opts)
+  #         |> Enum.map_reduce(0, &{process_document(&1, query, preprocess), &2 + 1})
+  #       {count, rows}
+  #     %WriteQuery{} = write ->
+  #       result = apply(Connection, function, [repo.__dynamo_pool__, write, opts])
+  #       {result, nil}
+  #   end
+  # end
 
   @doc false
   def insert(_repo, meta, _params, {key, :id, _}, _returning, _opts) do
@@ -594,7 +558,7 @@ defmodule Dynamo.Ecto do
 
   ## Storage
 
-  # Noop for DynamoDB, as any databases and collections are created as needed.
+  # Noop for DynamoDB, no concept of seperate databases
   @doc false
   def storage_up(_opts) do
     :ok
@@ -641,18 +605,18 @@ defmodule Dynamo.Ecto do
     raise ArgumentError, "DynamoDB adapter does not support SQL statements as collection options"
   end
 
-  def execute_ddl(repo, {:create, %Index{} = command}, opts) do
-    index = [name: to_string(command.name),
-             unique: command.unique,
-             background: command.concurrently,
-             key: Enum.map(command.columns, &{&1, 1}),
-             ns: namespace(repo, command.table)]
+  # def execute_ddl(repo, {:create, %Index{} = command}, opts) do
+  #   index = [name: to_string(command.name),
+  #            unique: command.unique,
+  #            background: command.concurrently,
+  #            key: Enum.map(command.columns, &{&1, 1}),
+  #            ns: namespace(repo, command.table)]
 
-    query = %WriteQuery{coll: "system.indexes", command: index}
+  #   query = %WriteQuery{coll: "system.indexes", command: index}
 
-    {:ok, _} = Connection.insert(repo.__dynamo_pool__, query, opts)
-    :ok
-  end
+  #   {:ok, _} = Connection.insert(repo.__dynamo_pool__, query, opts)
+  #   :ok
+  # end
 
   def execute_ddl(repo, {:drop, %Index{name: name, table: coll}}, opts) do
     command(repo, [dropIndexes: coll, index: to_string(name)], opts)
@@ -670,14 +634,18 @@ defmodule Dynamo.Ecto do
     :ok
   end
 
-  def execute_ddl(repo, {:rename, %Table{name: coll}, old, new}, opts) do
-    query = %WriteQuery{coll: to_string(coll),
-                        command: ["$rename": [{to_string(old), to_string(new)}]],
-                        opts: [multi: true]}
+  # def execute_ddl(repo, {:rename, %Table{name: coll}, old, new}, opts) do
+  #   query = %WriteQuery{coll: to_string(coll),
+  #                       command: ["$rename": [{to_string(old), to_string(new)}]],
+  #                       opts: [multi: true]}
 
-    {:ok, _} = Connection.update(repo.__dynamo_pool__, query, opts)
-    :ok
-  end
+  #   {:ok, _} = Connection.update(repo.__dynamo_pool__, query, opts)
+  #   :ok
+  # end
+
+  def namespace(_repo, _old), do: nil
+
+  def command(_,_,_), do: :ok # stub
 
   def execute_ddl(_repo, {:create_if_not_exists, %Table{options: nil}, columns}, _opts) do
     # We treat this as a noop as the collection will be created by dynamo
@@ -707,97 +675,6 @@ defmodule Dynamo.Ecto do
     if has_references? do
       IO.puts "[warning] DynamoDB adapter does not support references, and will not enforce foreign_key constraints"
     end
-  end
-
-  ## Dynamo specific calls
-
-  @doc """
-  Drops all the collections in current database.
-
-  Skips system collections and `schema_migrations` collection.
-  Especially usefull in testing.
-
-  Returns list of dropped collections.
-  """
-  @spec truncate(Ecto.Repo.t, Keyword.t) :: [String.t]
-  def truncate(repo, opts \\ []) do
-    opts = Keyword.put(opts, :log, false)
-
-    Enum.map(list_collections(repo, opts), fn collection ->
-      truncate_collection(repo, collection, opts)
-      collection
-    end)
-  end
-
-  @doc """
-  Runs a command in the database.
-
-  ## Usage
-
-      Dynamo.Ecto.command(Repo, drop: "collection")
-
-  ## Options
-
-    * `:database` - run command against a specific database
-      (default: repo's database)
-    * `:log` - should command queries be logged (default: true)
-
-  For list of available commands plese see: http://docs.dynamodb.org/manual/reference/command/
-  """
-  @spec command(Ecto.Repo.t, BSON.document, Keyword.t) :: BSON.document
-  def command(repo, command, opts \\ []) do
-    normalized = NormalizedQuery.command(command, opts)
-
-    Connection.command(repo.__dynamo_pool__, normalized, opts)
-  end
-
-  special_regex = %BSON.Regex{pattern: "\\.system|\\$", options: ""}
-  @migration Ecto.Migration.SchemaMigration.__schema__(:source)
-  migration_regex = %BSON.Regex{pattern: @migration, options: ""}
-
-  @list_collections_query ["$and": [[name: ["$not": special_regex]],
-                                    [name: ["$not": migration_regex]]]]
-
-  @doc false
-  def list_collections(repo, opts \\ []) do
-    list_collections(db_version(repo), repo, opts)
-  end
-
-  defp list_collections(version, repo, opts) when version >= 3 do
-    colls = command(repo, %{"listCollections": 1}, opts)["cursor"]["firstBatch"]
-
-    all_collections =
-      colls
-      |> Enum.map(&Map.fetch!(&1, "name"))
-      |> Enum.reject(&String.contains?(&1, "system."))
-
-    all_collections -- [@migration]
-  end
-
-  defp list_collections(_,repo, opts) do
-    query = %ReadQuery{coll: "system.namespaces", query: @list_collections_query}
-    opts = Keyword.put(opts, :log, false)
-
-    Connection.read(repo.__dynamo_pool__, query, opts)
-    |> Enum.map(&Map.fetch!(&1, "name"))
-    |> Enum.map(fn collection ->
-      collection |> String.split(".", parts: 2) |> Enum.at(1)
-    end)
-  end
-
-  defp truncate_collection(repo, collection, opts) do
-    query = %WriteQuery{coll: collection, query: %{}}
-    Connection.delete_all(repo.__dynamo_pool__, query, opts)
-  end
-
-  defp namespace(repo, coll) do
-    "#{repo.config[:database]}.#{coll}"
-  end
-
-  defp db_version(repo) do
-    version = command(repo, %{"buildinfo": 1}, [])["versionArray"]
-
-    Enum.fetch!(version, 0)
   end
 
   @doc false

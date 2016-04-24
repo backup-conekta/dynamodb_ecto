@@ -1,7 +1,7 @@
 defmodule Dynamo.Ecto.Mixfile do
   use Mix.Project
 
-  @version "0.1.4"
+  @version "0.1.0"
 
   def project do
     [app: :dynamodb_ecto,
@@ -15,12 +15,14 @@ defmodule Dynamo.Ecto.Mixfile do
   end
 
   def application do
-    [applications: [:ecto, :dynamodb]]
+    [applications: [:ecto, :dynamodb, :ex_aws, :httpoison]]
   end
 
   defp deps do
     [
-      {:dynamodb, git: "https://github.com/bglusman/dynamodb_elixir.git"},
+      {:ex_aws,    ">= 0.0.0"},
+      {:poison, "~> 1.2"}, # unsure why/if needed to specify here, `iex -S mix` errored without this
+      {:httpoison, ">= 0.0.0"},
       {:ecto, "~> 1.0.0"},
       {:dialyze, "~> 0.2.0", only: :dev},
       {:excoveralls, "~> 0.5", only: :test},

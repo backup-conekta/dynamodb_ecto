@@ -23,6 +23,7 @@ defmodule Dynamo.Ecto.Mixfile do
       {:ex_aws,    ">= 0.0.0"},
       {:poison, "~> 1.2"}, # unsure why/if needed to specify here, `iex -S mix` errored without this
       {:httpoison, ">= 0.0.0"},
+      {:uuid, "~> 1.1" },
       {:ecto, "~> 1.0.0"},
       {:dialyze, "~> 0.2.0", only: :dev},
       {:excoveralls, "~> 0.5", only: :test},

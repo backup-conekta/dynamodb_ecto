@@ -20,7 +20,7 @@ defmodule Dynamo.Ecto.Mixfile do
 
   defp deps do
     [
-      {:dynamodb, git: "https://github.com/bglusman/dynamodb_elixir.git"},
+      {:dynamodb, git: "git://github.com/bglusman/dynamodb_elixir.git"},
       {:ecto, "~> 1.0.0"},
       {:dialyze, "~> 0.2.0", only: :dev},
       {:excoveralls, "~> 0.5", only: :test},

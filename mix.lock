@@ -2,7 +2,7 @@
   "connection": {:hex, :connection, "1.0.2", "f4a06dd3ecae4141aa66f94ce92ea4c4b8753069472814932f1cadbc3078ab80", [:mix], []},
   "decimal": {:hex, :decimal, "1.1.1", "a8ff5b673105e6cdaca96f799aeefc6f07142881b616c65db16e14e556b16e76", [:mix], []},
   "dialyze": {:hex, :dialyze, "0.2.0", "ecabf292e9f4bd0f7d844981f899a85c0300b30ff2dd1cdfef0c81a6496466f1", [:mix], []},
-  "dynamodb": {:git, "git://github.com/bglusman/dynamodb_elixir.git", "7d9fbb977d184864e2e04c848d87caf1a4f1f784", []},
+  "dynamodb": {:git, "git://github.com/conekta/dynamodb_elixir.git", "7d9fbb977d184864e2e04c848d87caf1a4f1f784", []},
   "earmark": {:hex, :earmark, "0.2.1", "ba6d26ceb16106d069b289df66751734802777a3cbb6787026dd800ffeb850f3", [:mix], []},
   "ecto": {:hex, :ecto, "1.0.7", "d8deca5d5a03e7c9ed4821e6f1f85dad736aca960785f154e3a8c1bee1aeaa13", [:mix], [{:decimal, "~> 1.0", [hex: :decimal, optional: false]}, {:mariaex, "~> 0.4.1", [hex: :mariaex, optional: true]}, {:poison, "~> 1.0", [hex: :poison, optional: true]}, {:poolboy, "~> 1.4", [hex: :poolboy, optional: false]}, {:postgrex, "~> 0.9.1", [hex: :postgrex, optional: true]}, {:sbroker, "~> 0.7", [hex: :sbroker, optional: true]}]},
   "ex_doc": {:hex, :ex_doc, "0.11.4", "a064bdb720594c3745b94709b17ffb834fd858b4e0c1f48f37c0d92700759e02", [:mix], [{:earmark, "~> 0.1.17 or ~> 0.2", [hex: :earmark, optional: true]}]},

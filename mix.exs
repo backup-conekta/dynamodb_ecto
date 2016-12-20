@@ -20,7 +20,7 @@ defmodule Dynamo.Ecto.Mixfile do
 
   defp deps do
     [
-      {:dynamodb, git: "git://github.com/bglusman/dynamodb_elixir.git"},
+      {:dynamodb, git: "git://github.com/conekta/dynamodb_elixir.git"},
       {:ecto, "~> 1.0.0"},
       {:dialyze, "~> 0.2.0", only: :dev},
       {:excoveralls, "~> 0.5", only: :test},
@@ -39,7 +39,7 @@ defmodule Dynamo.Ecto.Mixfile do
   defp package do
     [maintainers: ["Brian Glusman"],
      licenses: ["Apache 2.0"],
-     links: %{"GitHub" => "https://github.com/bglusman/dynamodb_ecto"},
+     links: %{"GitHub" => "https://github.com/conekta/dynamodb_ecto"},
      files: ~w(mix.exs README.md CHANGELOG.md lib)]
   end
 
